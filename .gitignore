@@ -1,0 +1,8 @@
+build/
+dist/
+accimage.egg-info/
+*.jpg
+*.png
+.DS_Store
+._*
+
