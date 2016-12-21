@@ -250,7 +250,11 @@ static void Image_dealloc(ImageObject *self) {
     }
 }
 
+#if PY_MAJOR_VERSION == 2
 PyMODINIT_FUNC initaccimage(void) {
+#else
+PyMODINIT_FUNC PyInit_accimage(void) {
+#endif
     PyObject* m;
 
     /*
@@ -262,12 +266,37 @@ PyMODINIT_FUNC initaccimage(void) {
     Image_Type.tp_dealloc = (destructor) Image_dealloc;
     Image_Type.tp_new = PyType_GenericNew;
 
+#if PY_MAJOR_VERSION == 2
     m = Py_InitModule("accimage", NULL);
+#else
+    static struct PyModuleDef module_def = {
+       PyModuleDef_HEAD_INIT,
+       "accimage",
+       NULL,
+       -1,
+       NULL
+    };
+    m = PyModule_Create(&module_def);
+#endif
+
     if (m == NULL)
-        return;
+        goto err;
 
     if (PyType_Ready(&Image_Type) < 0)
-        return;
+        goto err;
 
     PyModule_AddObject(m, "Image", (PyObject*) &Image_Type);
+
+#if PY_MAJOR_VERSION == 2
+    return;
+#else
+    return m;
+#endif
+
+err:
+#if PY_MAJOR_VERSION == 2
+    return;
+#else
+    return NULL;
+#endif
 }
