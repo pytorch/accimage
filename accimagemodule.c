@@ -23,6 +23,7 @@ static PyObject* Image_resize(ImageObject* self, PyObject* args, PyObject* kwds)
     static char* argnames[] = { "size", "interpolation", NULL };
     PyObject* size = NULL;
     int interpolation = 0;
+    int antialiasing = 1;
     int new_height, new_width;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i", argnames, &size, &interpolation)) {
@@ -42,7 +43,7 @@ static PyObject* Image_resize(ImageObject* self, PyObject* args, PyObject* kwds)
     }
 
     // TODO: consider interpolation parameter
-    image_resize(self, new_height, new_width);
+    image_resize(self, new_height, new_width, antialiasing);
 
     if (PyErr_Occurred()) {
         return NULL;
@@ -143,6 +144,7 @@ static PyObject* Image_transpose(ImageObject* self, PyObject* args, PyObject* kw
 
 static PyObject* Image_copyto(ImageObject* self, PyObject* args, PyObject* kwds) {
     static char* argnames[] = { "buffer", NULL };
+    static const int FLAGS = PyBUF_CONTIG | PyBUF_FORMAT;
     PyObject* buffer_object;
     Py_buffer buffer;
 
@@ -150,22 +152,30 @@ static PyObject* Image_copyto(ImageObject* self, PyObject* args, PyObject* kwds)
         return NULL;
     }
 
-    if (PyObject_GetBuffer(buffer_object, &buffer, PyBUF_CONTIG) < 0) {
+    if (PyObject_GetBuffer(buffer_object, &buffer, FLAGS) < 0) {
         return NULL;
     }
 
-    if (buffer.len < self->channels * self->height * self->width) {
+    int expected_size = self->channels * self->height * self->width;
+    if (strcmp(buffer.format, "f") == 0) {
+      expected_size *= sizeof(float);
+    }
+
+    if (buffer.len < expected_size) {
         PyErr_Format(PyExc_IndexError, "buffer size (%lld) is smaller than image size (%d)",
-            (long long) buffer.len, self->channels * self->height * self->width);
+            (long long) buffer.len, expected_size);
         goto cleanup;
     }
 
-    if (buffer.format != NULL && strcmp(buffer.format, "B") != 0) {
-        PyErr_SetString(PyExc_TypeError, "buffer of unsigned byte elements expected");
+    if (buffer.format == NULL || strcmp(buffer.format, "B") == 0) {
+        image_copy_deinterleave(self, (unsigned char*) buffer.buf);
+    } else if (strcmp(buffer.format, "f") == 0) {
+        image_copy_deinterleave_float(self, (float*) buffer.buf);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "buffer of unsigned byte or float elements expected");
         goto cleanup;
     }
 
-    image_copy_deinterleave(self, (unsigned char*) buffer.buf);
 
 cleanup:
     PyBuffer_Release(&buffer);

@@ -22,7 +22,43 @@ void image_copy_deinterleave(ImageObject* self, unsigned char* output_buffer) {
 }
 
 
-void image_resize(ImageObject* self, int new_height, int new_width) {
+void image_copy_deinterleave_float(ImageObject* self, float* output_buffer) {
+    unsigned char* tmp_buffer = NULL;
+    IppiSize roi = { self->width, self->height };
+
+    tmp_buffer = malloc(self->height * self->width * self->channels);
+    if (!tmp_buffer) {
+        PyErr_NoMemory();
+        goto cleanup;
+    }
+
+    image_copy_deinterleave(self, tmp_buffer);
+    if (PyErr_Occurred()) {
+      goto cleanup;
+    }
+
+    IppStatus ipp_status = ippiConvert_8u32f_C3R(
+        tmp_buffer, self->width * self->channels,
+        output_buffer, self->width * self->channels * sizeof(float),
+        roi);
+    if (ipp_status != ippStsNoErr) {
+        PyErr_Format(PyExc_SystemError, "ippiConvert_8u32f_C3R failed with status %d", ipp_status);
+    }
+
+    Ipp32f value[3] = {255.0f, 255.0f, 255.0f};
+    ipp_status = ippiDivC_32f_C3IR(
+        value, output_buffer, self->width * self->channels * sizeof(float),
+        roi);
+    if (ipp_status != ippStsNoErr) {
+        PyErr_Format(PyExc_SystemError, "ippiDivC_32f_C3IR failed with status %d", ipp_status);
+    }
+
+cleanup:
+    free(tmp_buffer);
+}
+
+
+void image_resize(ImageObject* self, int new_height, int new_width, int antialiasing) {
     IppStatus ipp_status;
     unsigned char* new_buffer = NULL;
     IppiSize old_size = { self->width, self->height };
@@ -39,7 +75,7 @@ void image_resize(ImageObject* self, int new_height, int new_width) {
         goto cleanup;
     }
 
-    ipp_status = ippiResizeGetSize_8u(old_size, new_size, ippLinear, 0,
+    ipp_status = ippiResizeGetSize_8u(old_size, new_size, ippLinear, antialiasing,
         &specification_size, &initialization_buffer_size);
     if (ipp_status != ippStsNoErr) {
         PyErr_Format(PyExc_SystemError,
@@ -47,7 +83,7 @@ void image_resize(ImageObject* self, int new_height, int new_width) {
         goto cleanup;
     }
 
-    initialization_buffer = malloc(scratch_buffer_size);
+    initialization_buffer = malloc(initialization_buffer_size);
     if (initialization_buffer == NULL) {
         PyErr_NoMemory();
         goto cleanup;
@@ -59,7 +95,12 @@ void image_resize(ImageObject* self, int new_height, int new_width) {
         goto cleanup;
     }
 
-    ipp_status = ippiResizeLinearInit_8u(old_size, new_size, specification);
+    if (antialiasing) {
+      ipp_status = ippiResizeAntialiasingLinearInit(
+          old_size, new_size, specification, initialization_buffer);
+    } else {
+      ipp_status = ippiResizeLinearInit_8u(old_size, new_size, specification);
+    }
     if (ipp_status != ippStsNoErr) {
         PyErr_Format(PyExc_SystemError,
             "ippiResizeLinearInit_8u failed with status %d", ipp_status);
@@ -79,11 +120,19 @@ void image_resize(ImageObject* self, int new_height, int new_width) {
         goto cleanup;
     }
 
-    ipp_status = ippiResizeLinear_8u_C3R(
-        self->buffer + (self->y_offset * self->row_stride + self->x_offset) * self->channels,
-        self->row_stride * self->channels,
-        new_buffer, new_width * self->channels, new_offset, new_size,
-        ippBorderRepl, NULL, specification, scratch_buffer);
+    if (antialiasing) {
+      ipp_status = ippiResizeAntialiasing_8u_C3R(
+          self->buffer + (self->y_offset * self->row_stride + self->x_offset) * self->channels,
+          self->row_stride * self->channels,
+          new_buffer, new_width * self->channels, new_offset, new_size,
+          ippBorderRepl, NULL, specification, scratch_buffer);
+    } else {
+      ipp_status = ippiResizeLinear_8u_C3R(
+          self->buffer + (self->y_offset * self->row_stride + self->x_offset) * self->channels,
+          self->row_stride * self->channels,
+          new_buffer, new_width * self->channels, new_offset, new_size,
+          ippBorderRepl, NULL, specification, scratch_buffer);
+    }
     if (ipp_status != ippStsNoErr) {
         PyErr_Format(PyExc_SystemError,
             "ippiResizeLinear_8u_C3R failed with status %d", ipp_status);
