@@ -30,7 +30,7 @@ static PyObject* Image_resize(ImageObject* self, PyObject* args, PyObject* kwds)
         return NULL;
     }
 
-    if (!PyArg_ParseTuple(size, "ii", &new_height, &new_width)) {
+    if (!PyArg_ParseTuple(size, "ii", &new_width, &new_height)) {
         return NULL;
     }
 
