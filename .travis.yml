@@ -30,7 +30,7 @@ before_install:
       intel-ipp \
       libjpeg-turbo
   - source activate test-environment
-  - pip install pytest
+  - pip install pytest imageio
 
 install:
   - env | sort
