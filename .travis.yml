@@ -1,0 +1,34 @@
+language: python
+
+matrix:
+  include:
+    - python: "2.7"
+    - python: "3.5"
+    - python: "3.6"
+    - python: "3.7"
+
+before_install:
+  - sudo apt-get update
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  - conda create -q -n test-environment -c pytorch -c conda-forge python=$TRAVIS_PYTHON_VERSION scipy numpy intel-ipp
+  - source activate test-environment
+  - pip install pytest
+
+install:
+  # Using pip instead of setup.py ensures we install a non-compressed version of the package
+  # (as opposed to an egg), which is necessary to collect coverage.
+  # We still get the benefit of testing an installed version over the
+  # test version to iron out installation file-inclusion bugs but can
+  # also collect coverage.
+  - pip install .
+
+script:
+  - pytest test.py
