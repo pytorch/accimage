@@ -35,6 +35,8 @@ before_install:
 
 install:
   - env | sort
+  - ls $CONDA_PREFIX/include
+  - ls $CONDA_PREFIX/lib
   - pip install . --no-deps -vv
 
 script:
