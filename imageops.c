@@ -161,7 +161,8 @@ void image_flip_left_right(ImageObject* self) {
     IppiSize roi = { self->width, self->height };
     IppStatus ipp_status = ippiMirror_8u_C3IR(
         self->buffer + (self->y_offset * self->row_stride + self->x_offset) * self->channels,
-        self->row_stride, roi, ippAxsVertical);
+        self->row_stride * self->channels, 
+        roi, ippAxsVertical);
     if (ipp_status != ippStsNoErr)
         PyErr_Format(PyExc_SystemError, "ippiMirror_8u_C3IR failed with status %d", ipp_status);
 }
