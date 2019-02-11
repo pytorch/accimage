@@ -64,4 +64,4 @@ def test_flipping():
     new_image_np = image_to_np(image)
     assert image.width == 1920
     assert image.height == 931
-    assert np.testing.assert_array_equal(new_image_np[:, ::-1, :], original_image_np)
+    np.testing.assert_array_equal(new_image_np[:, ::-1, :], original_image_np)
