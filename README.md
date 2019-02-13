@@ -1,6 +1,6 @@
 # accimage
 
-[![Build status](https://travis-ci.org/pytorch/accimage.svg?branch=master)](https://github.com/pytorch/accimage)
+[![Build status](https://travis-ci.org/pytorch/accimage.svg?branch=master)](https://travis-ci.org/pytorch/accimage)
 
 An accelerated Image loader and preprocessor leveraging [Intel
 IPP](https://software.intel.com/en-us/intel-ipp).
