@@ -24,7 +24,7 @@ torchvision.set_image_backend('accimage')
 
 ## Installation
 
-accimage is available on conda-forge, simply run the follwoing to install
+accimage is available on conda-forge, simply run the following to install
 
 ```
 $ conda install -c conda-forge accimage
