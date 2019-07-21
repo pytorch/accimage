@@ -241,14 +241,28 @@ static PyTypeObject Image_Type = {
     0,                          /*tp_is_gc*/
 };
 
+#if PY_MAJOR_VERSION == 2
+#define PyUnicode_AsUTF8 PyString_AsString
+#define PyUnicode_Check PyString_Check
+#endif
+
 static int Image_init(ImageObject *self, PyObject *args, PyObject *kwds) {
     static char* argnames[] = { "path", NULL };
-    const char *path;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s", argnames, &path))
+    PyObject *obj;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", argnames, &obj))
         return -1;
 
-    image_from_jpeg(self, path);
+    if (PyUnicode_Check(obj)) {
+      // if object is string
+      const char* path = PyUnicode_AsUTF8(obj);
+      image_from_jpeg_path(self, path);
+    } else if (PyBytes_Check(obj)) {
+	// object is bytes in memory
+	const char* memory = PyBytes_AsString(obj);
+	Py_ssize_t size = PyBytes_Size(obj);
+	image_from_jpeg_memory(self, memory, size);
+    }
 
     return PyErr_Occurred() ? -1 : 0;
 }

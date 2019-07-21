@@ -31,6 +31,20 @@ def test_reading_image():
     assert image.width == 1920
     assert image.height == 931
 
+def test_reading_image_from_memory():
+    def get_img(inp):
+        image = accimage.Image(inp)
+        image_np = np.empty([image.channels, image.height, image.width], dtype=np.uint8)
+        image.copyto(image_np)
+        return image_np
+
+    path = 'chicago.jpg'
+    with open(path, 'rb') as f:
+        imbytes = f.read()
+
+    bytes_img = get_img(imbytes)
+    path_img = get_img(path)
+    assert np.alltrue(np.equal(bytes_img, path_img))
 
 def test_resizing():
     image = accimage.Image("chicago.jpg")

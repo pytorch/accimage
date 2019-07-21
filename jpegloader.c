@@ -19,17 +19,24 @@ static void accimage_jpeg_error_exit(j_common_ptr cinfo) {
     longjmp(accimage_err->setjmp_buffer, 1);
 }
 
-
-void image_from_jpeg(ImageObject* self, const char* path) {
+void _image_from_jpeg(ImageObject* self, unsigned int input_type, const char* input, unsigned long length) {
+    /*
+    input_type == 0: input is a `path` string to the jpeg file (example: "foo/a.jpg"
+        - in this case, the `length` argument is unused
+    input_type == 1: input is a pointer to file contents loaded into memory
+        - in this case, `length` is the length of the contents in memory in bytes
+    */
     struct jpeg_decompress_struct state = { 0 };
     struct accimage_jpeg_error_mgr jpeg_error;
     FILE* file = NULL;
     unsigned char* buffer = NULL;
 
-    file = fopen(path, "rb");
-    if (file == NULL) {
-        PyErr_Format(PyExc_IOError, "failed to open file %s", path);
+    if (input_type == 0) {
+      file = fopen(input, "rb");
+      if (file == NULL) {
+        PyErr_Format(PyExc_IOError, "failed to open file %s", input);
         goto cleanup;
+      }
     }
 
     state.err = jpeg_std_error(&jpeg_error.pub);
@@ -37,14 +44,22 @@ void image_from_jpeg(ImageObject* self, const char* path) {
     if (setjmp(jpeg_error.setjmp_buffer)) {
         char error_message[JMSG_LENGTH_MAX];
         (*state.err->format_message)((j_common_ptr) &state, error_message);
-        PyErr_Format(PyExc_IOError, "JPEG decoding failed: %s in file %s",
-            error_message, path);
-
+	if (input_type == 0) {
+	  PyErr_Format(PyExc_IOError, "JPEG decoding failed: %s in file %s",
+		       error_message, input);
+	} else { /* input_type == 1 */
+	  PyErr_Format(PyExc_IOError, "JPEG decoding failed: %s on buffer",
+		       error_message);
+	}
         goto cleanup;
     }
 
     jpeg_create_decompress(&state);
-    jpeg_stdio_src(&state, file);
+    if (input_type == 0) {
+      jpeg_stdio_src(&state, file);
+    } else { /* input_type == 1 */
+      jpeg_mem_src(&state, (unsigned char*) input, length);
+    }
     jpeg_read_header(&state, TRUE);
 
     state.dct_method = JDCT_ISLOW;
@@ -83,7 +98,18 @@ cleanup:
 
     free(buffer);
 
-    if (file != NULL) {
+    if (input_type == 0) {
+      if (file != NULL) {
         fclose(file);
+      }
     }
+}
+
+
+void image_from_jpeg_path(ImageObject* self, const char* path) {
+  _image_from_jpeg(self, 0, path, 0);
+}
+
+void image_from_jpeg_memory(ImageObject* self, const char* inmem, unsigned long inmem_size) {
+  _image_from_jpeg(self, 1, inmem, inmem_size);
 }
