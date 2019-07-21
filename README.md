@@ -12,6 +12,10 @@ accimage mimics the PIL API and can be used as a backend for
 
 Operations implemented:
 
+- `Image(path)` - creates an `accimage.Image` from a path to a jpeg file
+   - For example: `img = accimage.Image('chicago.jpg')`
+- `Image(bytes)` - creates an `accimage.Image` from the bytes of a jpeg file loaded into memory
+   - For example: `f = open('chicago.jpg', 'rb'); b = f.read(); img = accimage.Image(b)`
 - `Image.resize((width, height))`
 - `Image.crop((left, upper, right, lower))`
 - `Image.transpose(PIL.Image.FLIP_LEFT_RIGHT)`
