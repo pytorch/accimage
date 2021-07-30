@@ -32,6 +32,15 @@ def test_reading_image():
     assert image.height == 931
 
 
+def test_reading_image_from_memory():
+    bytes = open("chicago.jpg", "rb").read()
+    image = accimage.Image(bytes)
+    if SAVE_IMAGES:
+        save_image('test_reading_image_from_memory.jpg', image)
+    assert image.width == 1920
+    assert image.height == 931
+
+
 def test_resizing():
     image = accimage.Image("chicago.jpg")
 
