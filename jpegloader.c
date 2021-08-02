@@ -20,26 +20,17 @@ static void accimage_jpeg_error_exit(j_common_ptr cinfo) {
 }
 
 
-void image_from_jpeg(ImageObject* self, const char* path) {
+void image_from_file(ImageObject* self, FILE* file) {
     struct jpeg_decompress_struct state = { 0 };
     struct accimage_jpeg_error_mgr jpeg_error;
-    FILE* file = NULL;
     unsigned char* buffer = NULL;
-
-    file = fopen(path, "rb");
-    if (file == NULL) {
-        PyErr_Format(PyExc_IOError, "failed to open file %s", path);
-        goto cleanup;
-    }
 
     state.err = jpeg_std_error(&jpeg_error.pub);
     jpeg_error.pub.error_exit = accimage_jpeg_error_exit;
     if (setjmp(jpeg_error.setjmp_buffer)) {
         char error_message[JMSG_LENGTH_MAX];
         (*state.err->format_message)((j_common_ptr) &state, error_message);
-        PyErr_Format(PyExc_IOError, "JPEG decoding failed: %s in file %s",
-            error_message, path);
-
+        PyErr_Format(PyExc_IOError, "JPEG decoding failed: %s", error_message);
         goto cleanup;
     }
 
@@ -86,4 +77,24 @@ cleanup:
     if (file != NULL) {
         fclose(file);
     }
+}
+
+void image_from_buffer(ImageObject* self, void* buf, size_t size) {
+    FILE* source = fmemopen(buf, size, "rb");
+    if (source == NULL) {
+        PyErr_Format(PyExc_IOError, "failed to call fmemopen on buffer");
+        return;
+    }
+
+    image_from_file(self, source);
+}
+
+void image_from_jpeg(ImageObject* self, const char* path) {
+    FILE* file = file = fopen(path, "rb");
+    if (file == NULL) {
+        PyErr_Format(PyExc_IOError, "failed to open file %s", path);
+        return;
+    }
+
+    image_from_file(self, file);
 }
