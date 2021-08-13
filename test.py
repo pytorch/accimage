@@ -33,12 +33,14 @@ def test_reading_image():
 
 
 def test_reading_image_from_memory():
+    from_file = accimage.Image("chicago.jpg")
     bytes = open("chicago.jpg", "rb").read()
-    image = accimage.Image(bytes)
+    from_bytes = accimage.Image(bytes)
     if SAVE_IMAGES:
-        save_image('test_reading_image_from_memory.jpg', image)
-    assert image.width == 1920
-    assert image.height == 931
+        save_image('test_reading_image_from_memory.jpg', from_bytes)
+    assert from_bytes.width == 1920
+    assert from_bytes.height == 931
+    np.testing.assert_array_equal(image_to_np(from_file), image_to_np(from_bytes))
 
 
 def test_resizing():
