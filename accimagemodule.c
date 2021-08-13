@@ -242,13 +242,22 @@ static PyTypeObject Image_Type = {
 };
 
 static int Image_init(ImageObject *self, PyObject *args, PyObject *kwds) {
-    static char* argnames[] = { "path", NULL };
     const char *path;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s", argnames, &path))
-        return -1;
+    if (PyArg_ParseTuple(args, "s", &path)) {
+        image_from_jpeg(self, path);
+    }
+    else {
+        Py_buffer buffer;
 
-    image_from_jpeg(self, path);
+        PyErr_Clear();
+        if (PyArg_ParseTuple(args, "y*", &buffer)) {
+            void* buf = buffer.buf;
+            Py_ssize_t size = buffer.len;
+            image_from_buffer(self, buf, size);
+            PyBuffer_Release(&buffer);
+        }
+    }
 
     return PyErr_Occurred() ? -1 : 0;
 }
