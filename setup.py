@@ -10,7 +10,7 @@ accimage = Extension(
 
 setup(
     name="accimage",
-    version="0.1.1",
+    version="0.2.0",
     description="Accelerated image loader and preprocessor for Torch",
     author="Marat Dukhan",
     author_email="maratek@gmail.com",

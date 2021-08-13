@@ -1,10 +1,11 @@
-# Next
+# v0.2.0
 
 * Add support to reading images from a `bytes` buffer, e.g.
-  ```python 
+  ```python
   with open("chicago.jpg", "rb") as f:
       img = accimage.Image(f.read())
   ```
+  (This new functionality is thanks to @brhcriteo!)
 
 # v0.1.1
 
