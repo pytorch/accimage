@@ -1,6 +1,5 @@
 # accimage
 
-[![Build status](https://travis-ci.org/pytorch/accimage.svg?branch=master)](https://travis-ci.org/pytorch/accimage)
 [![Anaconda badge](https://anaconda.org/conda-forge/accimage/badges/version.svg)](https://anaconda.org/conda-forge/accimage)
 
 
