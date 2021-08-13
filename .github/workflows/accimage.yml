@@ -1,0 +1,45 @@
+name: Accimage (Ubuntu latest)
+on: [push]
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: [3.6, 3.7, 3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info -a
+
+      - name: Install deps
+        shell: bash -l {0}
+        run: |
+          conda install \
+            -c pytorch \
+            -c conda-forge \
+            pip \
+            scipy \
+            numpy \
+            intel-ipp \
+            libjpeg-turbo
+          pip install pytest imageio
+
+      - name: Install Accimage
+        shell: bash -l {0}
+        run: |
+          CPPFLAGS="-I$CONDA_PREFIX/include" LDFLAGS="-L$CONDA_PREFIX/lib" pip install . --no-deps -vv
+
+      - name: Test Accimage
+        shell: bash -l {0}
+        run: |
+          pytest test.py
