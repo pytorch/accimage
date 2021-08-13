@@ -1,5 +1,6 @@
 # accimage
 
+[![Build status](https://github.com/pytorch/accimage/actions/workflows/accimage.yml/badge.svg)](https://github.com/pytorch/accimage/actions/workflows/accimage.yml)
 [![Anaconda badge](https://anaconda.org/conda-forge/accimage/badges/version.svg)](https://anaconda.org/conda-forge/accimage)
 
 
